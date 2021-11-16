@@ -1,0 +1,322 @@
+---
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+options(repos=structure(c(CRAN="https://cran.cnr.berkeley.edu/")))
+```
+
+## 1) Introduction
+In 1986,a group of urologists in London published a research paper in The British Medical Journal that compared the effectiveness of two different methods to remove kidney
+stones. Treatment A was open surgery (invasive), and treatment B was percutaneous nephrolithotomy (less invasive). When they looked at the results from 700 patients, 
+treatment B had a higher success rate. However, when they only looked at the subgroup of patients with different kidney stone sizes, treatment A had a better success rate. 
+What is going on here? This known statistical phenomenon is called Simpon’s paradox. Simpon’s paradox occurs when trends appear in subgroups but disappear or reverse when 
+subgroups are combined.
+
+
+## 2) Project Data Set
+### 2.1 Loading the Data Set
+The dataset was prepared as a text “comma-separated value” (CSV) ﬁle named KSData.csv.
+
+***
+
+Task 1: Start the R program and switch to the directory where the dataset is stored.
+
+Task 2: Examine the contents of the CSV ﬁle.
+
+```
+file.show("KS_Data.csv")
+```
+***
+
+
+#### Question 1
+What is the format of the ﬁrst line? What does it represent?
+```
+
+The first line represents the header of the data, which represents the names of variables of data; treatment, stone size and success. Each represent a column of the table, 
+giving three columns in total. Success is displayed as two numerical values, 0 and 1 where the former represents success and latter represents failure.
+
+```
+
+
+#### Question 2
+What is the format of the following lines? What do they represent?
+```
+ For the following lines, the first column is in alphabet, only contained either A or B. It distinguish two treatments used in this research; A for open surgery and B for 
+ Percutaneous nephrolithotomy. The second column discriminates the stone size, small or large. The last column is in number, 0 or 1, which indicates success. 0 for Failure 
+ and 1 for Success. As there were 700 observations, including the first line, there are 701 lines in the data file.
+
+```
+***
+
+Task 3: Load the readr and dplyr packages and load the dataset into R using the read.csv() method and examine its structure.
+
+***
+
+#### Question 3
+Identify each variable from the list above. Note its data type and (if applicable) numerical precision.
+```
+Variable treatment is represented as string data type and gives two outputs: A and B. The second variable is stone size represented as string data type with two outputs: 
+large and small. Success variable is represented as integer data type and only gives 0 and 1 as output representing, success and failure, respectively. Since, success is only 
+represented as two integers (0 and 1), it is impossible and inappropriate to calculate numerical precision from given data. Therefore, it is not applicable.  
+
+```
+
+
+```{r}
+# Load the readr and dplyr packages
+install.packages("readr")
+install.packages("dplyr")
+library("readr")
+library("dplyr")
+
+# Read datasets kidney_stone_data.csv into data 
+data <- read.csv(file = "KS_Data.csv")
+
+# Take a look at the first few rows of the dataset 
+head(data)
+```
+
+
+## 3) Problem and Objectives
+### 3.1 Recreate the Treatment−Success summary table
+The data contains three columns: treatment, stone_size and success. To start, we want to know which treatment had a higher success rate regardless of stone size.
+
+***
+
+Task 4: Create a table with the number of successes and frequency of success by each treatment using the tidyverse syntax.
+```{r}
+# Calculate the number and frequency of success and failure of each treatment 
+data %>% 
+    group_by(treatment, success) %>% 
+    summarise(N = n()) %>%
+    mutate(Freq = round(N/sum(N), 4))
+```
+***
+
+
+#### Question 4
+What do you observe from the treatment and success rate descriptive table? Report the success rates.
+```
+The table shows the number and frequency of success and failure of each treatment. According to the table, regardless of stone size, treatment A shows a success rate of 
+0.7800 and treatment B shows a rate of 0.8257. Hence, treatment B seems to have a higher success rate.
+
+```
+
+
+### 3.2 Bringing stone size into the picture
+Now, let’s also consider stone size and see what happens.
+
+***
+
+Task 5: Stratify the data into small vs. large stone subcategories and compute again the success count and rate by treatment as we did in the previous task.
+
+The ﬁnal table will be treatment X stone size X success.
+```{r}
+# Calculate number and frequency of success and failure by stone size for each treatment
+sum_data <-
+  data %>%
+  group_by(treatment, stone_size, success) %>%
+  summarise(N = n()) %>%
+  mutate(Freq = round(N/sum(N), 4))
+
+# Print out the data frame we just created
+print.data.frame(sum_data)
+```
+***
+
+
+#### Question 5
+What is your conclusion when the data are stratiﬁed by stone size?
+```
+For large kidney stones, treatment A shows a success rate of 0.7300 or 73% and treatment B shows a rate of 0.6875 or 68.75%. In large kidney stone, treatment A seems to have 
+a higher success rate. For the small kidney stone, treatment A shows a success rate of 0.9310 and treatment B shows a rate of 0.8667. Even in small kidney stone, treatment A 
+has a higher success rate. In conclusion, treatment B had a higher success rate when kidney stone size was not taken into account (in Question 4), but treatment A had a 
+higher success rate in both sizes when kidney stone size was taken as a parameter. Furthermore, both treatments have a higher success rate in ‘small kidney stone’ than ‘large 
+kidney stone’.
+
+```
+
+
+### 3.3 When in doubt, rely on a plot
+Sometimes a plot is a more efﬁcient way to communicate hidden numerical information in the data.
+
+***
+
+Task 6: In this task, you should apply a plotting technique to reveal the hidden information.
+```{r}
+# Load ggplot2 
+install.packages("ggplot2")
+library("ggplot2")
+
+# Create a bar plot to show stone size count within each treatment
+sum_data %>% 
+  ggplot(aes(x = treatment, y = N)) +
+  geom_bar(aes(fill = stone_size), stat = "identity")
+```
+
+
+***
+
+#### Question 6
+What could you observe from the bar plot? Can we conﬁrm this hypothesis with statistical testing? If you could choose 1 statistical test to examine this, which would you choose? Argue why.
+```
+By observing color difference, bar plot let us easily recognize portion of ‘stone size count’ within each treatment. Each treatment was not done at the same number of each 
+size of kidney stone. According to the bar plot, treatment A was performed mainly on large kidney stones. However, treatment B was performed prevalently on small kidney 
+stones.
+
+Since, overall count of large kidney stone and small kidney stone cases are almost equal to each other, but distribution of the sample to subgroup does not represent that 
+homogeneity, there is a random sampling error during the experiment. The hypothesis that can be generated from such observation is that random sampling error that resulted in 
+irregular distribution of samples with different stone sizes in treat A and B may have caused confounding effect and Simpson’s paradox in the result.  Thus, difference in 
+trend in overall and subgroup (large stones and small stones) success rates may have rooted from possible association between success rates, treatment types and stone sizes.
+
+This hypothesis can be confirmed using, ‘Pearson’s Chi-squared test’. Pearson’s Chi-squared test is used for analyzing the association between two categorical variables. In 
+this case, they are association between treatment types and stone sizes. To be exact, it analyzes whether the risk of certain event occurring in two different groups is 
+correlated. Following statements are null hypothesis and alternative hypothesis for this test.
+
+Ho: Two categorical variables (stone size and treatment types) are independent from each other. 
+HA: Two categorical variables are related to each other.
+
+The test will analyze the resulting p-values and reject null hypothesis when p-value is less than predetermined significance level, which is 0.05. Rejection of null 
+hypothesis represents that two variables under analysis are dependent to each other. 
+
+```
+
+
+### 3.4 Identify and conﬁrm the confounding variable
+Now, perform the test.
+
+Task 7: Analyze the association between stone size (i.e., case severity) and treatment assignment using a statistical test.
+```{r}
+# Load the broom package
+install.packages("broom")
+library("broom")
+
+# Run a test
+trt_ss <- chisq.test(data$treatment, data$stone_size)
+
+# Summarize the result in tidy format
+tidy(trt_ss)
+```
+
+
+### 3.5 Remove the confounding effect
+***
+#### Question 7
+Are we conﬁdent that stone size/case severity is indeed the confounding variable (aka, lurking variable) in this study of kidney stone treatment and success rate? Explain why?
+```
+Pearson’s Chi-squared test yielded Chi-square value of 189.36 and p-value of 4.395*10^-43. The p-value was more than 10-40  fold less than predetermined significance level of 
+0.05, which represents that null hypothesis is rejected and there is a correlation between the two variables under analysis. The Chi-squared value was significantly greater 
+1.than 5, which is an indicator that the sample is large enough and it is appropriate to use Pearson’s Chi-squared test. The two values substantiate the argument that stone 
+2.size was indeed a confounding variable in this study that caused Simpson’s paradox. 
+
+```
+***
+
+
+The good news is that there are ways to get rid of the effect of the confounding variable. 
+
+Note: Logistic regression is a mathematical process that produces results that can be interpreted as an odds ratio, and it is easy to use by any statistical package. The 
+special thing about logistic regression is that it can control for numerous confounders(if there is a large enough sample size). Thus logistic regression is a mathematical 
+model that can give an odds ratio which is controlled for multiple confounders. This odds ratio is known as the adjusted odds ratio, because its value has been adjusted for 
+the other covariates (including confounders).
+
+Using multiple logistic regression, remove the unwanted effect of stone size, and then tidy the output with a function from the broom package.
+
+```{r}
+# Run a multiple logistic regression
+m <- glm(data=data, success ~ stone_size + treatment, family="binomial")
+
+# Print out model coefficient table in tidy format 
+tidy(m)
+```
+
+As you can see, the estimated coefﬁcients are reported, together with their standard error and a p−value.
+
+***
+
+
+#### Question 8
+Since you know p−values stem from statistical tests, what exactly would be tested here? Clarify your answer using the table as an example.
+```
+Generalized linear model tests two predictor variables (stone size and treatment) to generate dependent variable (success) in a linear model of the form Y = aX + b. Estimate 
+in the table is also called as coefficients of the predictors or ‘a’ in the function. It represents that one-unit change in coefficient generates following unit change in log 
+of odds. For example, stone size estimate changes the log of odds by 1.26 per one-unit change in stone size. The p-value of this table help identify whether given estimates 
+are significant. If it is a value less than predetermined value of 0.05, it is considered as significant in 95% confidence level. The table shows that the coefficients of 
+small stone size significantly affect success rates relative to large stone size, which is the reference category. Positive coefficient also hints that there is a positive 
+correlation between success rate and small stone size, meaning small stone size is easier to treat and cure. In the meanwhile, treatment B failed to affect the success rate 
+significantly compared to its counterpart, treatment A. It represents that treatment B is not significantly better at treating and curing kidney stone in general. 
+```
+
+
+### 3.6 Visualize model output
+We successfully ﬁt a multiple regression and pulled out the model coefﬁcient estimates! Typically (and arbitrarily), P-values below 0.05 indicate statistical signiﬁcance. 
+Another way to examine whether a signiﬁcant relationship exists or not is to look at the 95% conﬁdence interval (CI) of the estimate.
+
+***
+
+Task 8: Create a plot to see if:
+```
+1. The effect of a small stone is the same as a big stone? 
+2. Treatment A is as effective as treatment B?
+```
+***
+Note: Save the model coefﬁcient table from the last task as the object tidy_m. Set up ggplot() canvas with the point estimate on the y-axis and the model terms on the x-axis. 
+Calculate the upper bound of the 95% CI within geom_pointrange() and add a horizontal line at zero using geom_hline()
+
+```{r}
+# Save the tidy model output into an object 
+tidy_m <- tidy(m)
+
+# Plot the coefficient estimates with 95% CI for each term in the model
+tidy_m %>% 
+  ggplot(aes(x = term, y = estimate)) +
+  geom_pointrange(aes(ymin = estimate - 1.96 * std.error,
+                      ymax = estimate + 1.96 * std.error)) +
+  geom_hline(yintercept = 0)
+```
+
+
+***
+
+#### Question 9
+Can you identify signiﬁcant effects using the CI? Explain how.
+```
+Confidence intervals were constructed using standard errors identified in the table. 1.96 was multiplied to the standard error as that represent 95% of the data in normal 
+distribution. In this test, null hypothesis assumes that estimate has a normal distribution with average of zero and standard deviation of 1. Thus, if y value of 0 or 
+estimate value of 0 is within the confidence interval, null hypothesis is accepted and estimate of corresponding predictor variable does not significantly affect the success 
+rate compared to reference category. In this case, treatment B accepts the null hypothesis as estimate value of 0 is within the confidence level. Small stone size on the 
+other hand, did not have estimate value of 0 in its confidence interval and had values ranging from approximately 0.8 to 1.74. Such results further show that it affects the 
+success rate significantly compared to large stone size along with low p-value of 1.55*10^-14.
+
+```
+
+
+### 3.7 Generate insights
+#### Question 10
+Based on the coefﬁcient estimate plot and the model output table, there is enough information to generate insights about the study. Is treatment A superior to B after taking 
+into account the effect of stone size/severity level?
+```
+After analyzing both coefficients estimate plot and model output table, it becomes evident that treatment B is not significantly effective in treating kidney stones compared 
+to treatment A. It was evident that small stone size is easier to cure and treatment B, which had higher composition of small kidney stone samples had higher overall success 
+rate only because it had easier sample to treat and cure. Thus, taking stone size into account, treatment B is not a better treatment method compared to treatment A and 
+higher overall success rate is only attributed by higher composition of small kidney stone samples. 
+
+```
+***
+
+
+Task9: Everything is in the output table from the regression model. Recall,a coefﬁcient represents the effect size of the speciﬁc model term. A positive coefﬁcient means that 
+the term is positively related to the outcome. For categorical predictors, the coefﬁcient is the effect on the outcome relative to the reference category. In our case, stone 
+size large and treatment A are the reference categories.
+
+```{r}
+# Is small stone more likely to be a success after controlling for treatment option effect?
+small_high_success <- "Yes"
+
+# Is treatment A significantly better than B?
+A_B_sig <- "No"
+```
+

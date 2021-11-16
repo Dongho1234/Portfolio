@@ -1,0 +1,1116 @@
+---
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+***
+## Project2: Linear Regression
+
+```
+file.show("data.csv")
+```
+
+
+**Model depned on goals**
+
+The goal is to use multiple linear regression for estimating brain size (measured by ECV) from external skull measurements and body mass.
+
+--> Determine effects of an exposure on an outcome.
+
+**General**
+
+Y = outcome = ECV
+X = variables = N.O, Bs, Bcal, Height, Width, AvgBodyMass, (Infraclass)
+
+
+
+
+***
+#### (a) Explanatory Analysis on the data
+
+```{r warning=FALSE}
+Data <- read.csv('data.csv') # Loading the file
+attach(Data)
+```
+
+
+**[1] Filter data depends on Infraclasses**
+
+```{r message=FALSE, warning=FALSE}
+library('dplyr')
+```
+
+```{r}
+Monotremata <- filter(Data, Infraclass == "Monotremata")
+head(Monotremata)
+```
+
+```{r}
+Marsupiala <- filter(Data, Infraclass == "Marsupiala")
+head(Marsupiala)
+```
+
+```{r}
+Placental <- filter(Data, Infraclass == "Placental")
+head(Placental)
+```
+
+
+
+***
+**[2] Simple Scatterplots**
+
+Simple scatterplot of ECV & N.O
+```{r warning=FALSE}
+par(mfrow=c(2, 2))
+plot(N.O, ECV)
+plot(N.O, log(ECV))
+plot(log(N.O), ECV)
+plot(log(N.O), log(ECV)) # shows linearity
+```
+
+```{r warning=FALSE}
+par(mfrow=c(2, 2))
+plot(log(N.O), log(ECV), main='All together')
+with(Monotremata, plot(log(N.O), log(ECV), main='Monotremata'))
+with(Marsupiala ,plot(log(N.O), log(ECV), main='Marsupiala'))
+with(Placental, plot(log(N.O), log(ECV), main='Placental'))
+```
+
+
+
+
+
+Simple scatterplot of ECV & Bs
+```{r warning=FALSE}
+par(mfrow=c(2, 2))
+plot(Bs, ECV)
+plot(Bs, log(ECV))
+plot(log(Bs), ECV)
+plot(log(Bs), log(ECV)) # shows linearity
+```
+
+```{r warning=FALSE}
+par(mfrow=c(2, 2))
+plot(log(Bs), log(ECV), main='All together')
+with(Monotremata, plot(log(Bs), log(ECV), main='Monotremata'))
+with(Marsupiala ,plot(log(Bs), log(ECV), main='Marsupiala'))
+with(Placental, plot(log(Bs), log(ECV), main='Placental'))
+```
+
+
+
+
+
+Simple scatterplot of ECV & Bcal
+```{r warning=FALSE}
+par(mfrow=c(2, 2))
+plot(Bcal, ECV)
+plot(Bcal, log(ECV))
+plot(log(Bcal), ECV)
+plot(log(Bcal), log(ECV)) # shows linearity
+```
+
+```{r warning=FALSE}
+par(mfrow=c(2, 2))
+plot(log(Bcal), log(ECV), main='All together')
+with(Monotremata, plot(log(Bcal), log(ECV), main='Monotremata'))
+with(Marsupiala ,plot(log(Bcal), log(ECV), main='Marsupiala'))
+with(Placental, plot(log(Bcal), log(ECV), main='Placental'))
+```
+
+
+
+
+
+Simple scatterplot of ECV & Height
+```{r warning=FALSE}
+par(mfrow=c(2, 2))
+plot(Height, ECV)
+plot(Height, log(ECV))
+plot(log(Height), ECV)
+plot(log(Height), log(ECV)) # shows linearity
+```
+
+```{r warning=FALSE}
+par(mfrow=c(2, 2))
+plot(log(Height), log(ECV), main='All together')
+with(Monotremata, plot(log(Height), log(ECV), main='Monotremata'))
+with(Marsupiala ,plot(log(Height), log(ECV), main='Marsupiala'))
+with(Placental, plot(log(Height), log(ECV), main='Placental'))
+```
+
+
+
+
+
+Simple scatterplot of ECV & Width
+```{r warning=FALSE}
+par(mfrow=c(2, 2))
+plot(Width, ECV)
+plot(Width, log(ECV))
+plot(log(Width), ECV)
+plot(log(Width), log(ECV)) # shows linearity
+```
+
+```{r warning=FALSE}
+par(mfrow=c(2, 2))
+plot(log(Width), log(ECV), main='All together')
+with(Monotremata, plot(log(Width), log(ECV), main='Monotremata'))
+with(Marsupiala ,plot(log(Width), log(ECV), main='Marsupiala'))
+with(Placental, plot(log(Width), log(ECV), main='Placental'))
+```
+
+
+
+
+
+Simple scatterplot of ECV & AvgBodyMass
+```{r warning=FALSE}
+par(mfrow=c(2, 2))
+plot(AvgBodyMass, ECV)
+plot(AvgBodyMass, log(ECV))
+plot(log(AvgBodyMass), ECV)
+plot(log(AvgBodyMass), log(ECV)) # shows linearity
+```
+
+```{r warning=FALSE}
+par(mfrow=c(2, 2))
+plot(log(AvgBodyMass), log(ECV), main='All together')
+with(Monotremata, plot(log(AvgBodyMass), log(ECV), main='Monotremata'))
+with(Marsupiala ,plot(log(AvgBodyMass), log(ECV), main='Marsupiala'))
+with(Placental, plot(log(AvgBodyMass), log(ECV), main='Placental'))
+```
+
+
+***
+Drawing scatterplot of predictor variable vs response variable reveals that there is a linear relationship of varying degree between predictor variable and response 
+variable. 
+
+Plotting each variable(X) with outcome(Y), the data seems highly skewwed in left. So, for linearity, transformation of variable can be considered.
+
+For all six variables, linearity resumed with taking log-transformation on both variable and outcome: log(Y) ~ log(X)
+
+Hence, we take the **log-transformed variables** for the model building.
+
+***
+After the transformation, in general they were positively correlated, meaning that increase in predictor variable led to increase in response variable. 
+
+This makes logical sense as animlas of bigger height, for example, are likely to have bigger skull, thus higher ECV. Overall, there was a clear linearity between predictor 
+and response variable with positive slope.  
+
+
+
+
+
+
+
+
+
+
+***
+#### (b) Building Regression model
+
+**Foward model building**
+
+- Include predictor one by one
+- The included predictor is ideally the one that is most strongly associated with outcome, after verification for the other predictors in the model
+- For including, compare absolute t-value between variables of p-value < 5%(~10%), including interaction term.
+- Include one by one, first from variable with the highest absolute t-value
+
+
+```{r message=FALSE, warning=FALSE}
+library(car) # load car to use vif function
+```
+
+
+***
+#### Step 1: choose first variable according to t-value
+Starting from the empty model, **lm(ECV ~ 1)**
+
+Candidates for adding are:
+
+- N.O
+- Bs
+- Bcal
+- Height
+- Width
+- AvgBodyMass
+
+
+```{r}
+model_11 <- lm(log(ECV) ~ log(N.O))
+summary(model_11)
+```
+
+```{r}
+model_12 <- lm(log(ECV) ~ log(Bs))
+summary(model_12)
+```
+
+```{r}
+model_13 <- lm(log(ECV) ~ log(Bcal))
+summary(model_13)
+```
+
+```{r}
+model_14 <- lm(log(ECV) ~ log(Height))
+summary(model_14)
+```
+
+```{r}
+model_15 <- lm(log(ECV) ~ log(Width))
+summary(model_15)
+```
+
+```{r}
+model_16 <- lm(log(ECV) ~ log(AvgBodyMass))
+summary(model_16)
+```
+
+
+***
+**t-value**
+
+- N.O. = 52.34, p-value < 5% --> significant
+- BS = 29.27, p-value < 5% --> significant
+- Bcal = 40.73, p-value < 5% --> significant
+- Height = 108.9, p-value < 5% --> significant
+- **Width = 109.96**, p-value < 5% --> significant
+- AvgBodyMass = 24.48, p-value < 5% --> significant
+
+
+So, we start building model with Width. Width is added to the empty model. 
+
+
+
+
+***
+#### Step 2: choose second variable
+Starting from **lm(log(ECV) ~ log(Width))**
+
+Candidates for adding are:
+
+- N.O
+- Bs
+- Bcal
+- Height
+- AvgBodyMass
+
+
+```{r}
+model_21 <- lm(log(ECV) ~ log(Width) + log(N.O))
+summary(model_21)
+```
+
+```{r}
+model_22 <- lm(log(ECV) ~ log(Width) + log(Bs))
+summary(model_22)
+```
+
+```{r}
+model_23 <- lm(log(ECV) ~ log(Width) + log(Bcal))
+summary(model_23)
+```
+
+```{r}
+model_24 <- lm(log(ECV) ~ log(Width) + log(Height))
+summary(model_24)
+```
+
+```{r}
+model_25 <- lm(log(ECV) ~ log(Width) + log(AvgBodyMass))
+summary(model_25)
+```
+
+
+***
+**t-value**
+
+- N.O = 9.586, p-value < 5% --> significant
+- Bs = 3.247, p-value = 0.00137 < 5% --> significant
+- Bcal = 4.941, p-value = 1.66e-06 < 5% --> significant
+- **Height = 13.21**, p-value < 5% --> significant
+- AvgBodyMass = 1.673, but p-value = 0.986 > 10% --> we do not consider AvgBodyMass
+
+
+Comparing absolute t-values, Height has the largest. Hence, Height is added to the model.
+
+
+
+
+***
+#### Step 3: choose the third variable
+Starting from **lm(log(ECV) ~ log(Width) + log(Height))**
+
+Candidates for adding are:
+
+- N.O
+- Bs
+- Bcal
+- AvgBodyMass
+
+
+```{r}
+model_31 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O))
+summary(model_31)
+```
+- for N.O, t-value is 4.622
+- p-value is 6.9e-06, which is <5% --> significant
+
+
+```{r}
+model_32 <- lm(log(ECV) ~ log(Width) + log(Height) + log(Bs))
+summary(model_32)
+```
+- for Bs, t-value is 2.099
+- p-value is 0.0371, which is <5% --> significant
+
+
+```{r}
+model_33 <- lm(log(ECV) ~ log(Width) + log(Height) + log(Bcal))
+summary(model_33)
+```
+- for Bcal, t-value is 3.148
+- p-value is 0.0019, which is <5% --> significant
+
+
+```{r}
+model_34 <- lm(log(ECV) ~ log(Width) + log(Height) + log(AvgBodyMass))
+summary(model_34)
+```
+- for AvgBodyMass, **p-value is 0.449, which is higher than 10%**
+- So we do not consider AvgBodyMass
+
+
+***
+**t-value**
+
+- N.O =  4.622
+- Bs = 2.099
+- Bcal = 3.148
+
+
+Comparing absolute t-values, N.O has the higest. Hence, N.O is added to the model.
+
+
+
+
+***
+#### Step 4
+Starting from **lm(log(ECV) ~ log(Width) + log(Height) + log(N.O))**
+
+Candidates for adding are:
+
+- Bs
+- Bcal
+- AvgBodyMass
+
+
+```{r}
+model_41 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(Bs))
+summary(model_41)
+```
+- for Bs, **p-value is 0.969, which is higher than 10%**
+- So we do not consider Bs
+
+
+```{r}
+model_42 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(Bcal))
+summary(model_42)
+```
+- for Bcal, **p-value is 0.439295, which is higher than 10%**
+- So we do not consider Bcal
+
+
+```{r}
+model_43 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass))
+summary(model_43)
+```
+- for AvgBodyMass, t-value is -2067
+- p-value is 0.0401, which is <5% --> significant
+
+
+***
+**t-value**
+
+- AvgBodyMass = -2.067
+
+AvgBodyMass is only significant and considerable. So, AvgBodyMass is added to the model.
+
+
+
+
+***
+#### Step 5
+Starting from **lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass))**
+
+Candidates for adding are:
+
+- Bs
+- Bcal
+
+
+```{r}
+model_51 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Bs))
+summary(model_51)
+```
+- for Bs, **p-value is 0.7053, which is higher than 10%**
+- so, we do not consider Bs
+
+
+```{r}
+model_52 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Bcal))
+summary(model_52)
+```
+- for Bcal, **p-value is 0.7053, which is higher than 10%**
+- so, we do not consider Bcal
+
+
+Hence, no more variable is significant and considerable. So, from now on, the interaction term between two variables are considered.
+
+
+
+
+***
+#### Step 6
+Starting from **lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass))**
+
+Candidates for adding are:
+
+- Width:Height
+- Width:N.O
+- Width:AvgBodyMass
+- Height:N.O
+- Height:AvgBodyMass
+- N.O:AvgBodyMass
+
+
+```{r}
+model_61 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Width):log(Height))
+summary(model_61)
+```
+- for Width:Height, t-value is -4.083
+- p-value is 6.5e-05 < 5% --> significant
+
+
+```{r}
+model_62 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Width):log(N.O))
+summary(model_62)
+```
+- for Width:N.O, t-value is -4.302
+- p-value is 2.69e-05 < 5% --> significant
+
+
+```{r}
+model_63 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Width):log(AvgBodyMass))
+summary(model_63)
+```
+- for Width:AvgBodyMass, t-value is -4.552
+- p-value is 9.39e-06 < 5% --> significant
+
+
+```{r}
+model_64 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(N.O))
+summary(model_64)
+```
+- for Height:N.O, t-value is -4.856
+- p-value is 2.47e-06 < 5% --> significant
+
+
+```{r}
+model_65 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass))
+summary(model_65)
+```
+- for Height:AvgBodyMass, t-value is -5.197
+- p-value is 5.13e-07 < 5% --> significant
+
+
+```{r}
+model_66 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(N.O):log(AvgBodyMass))
+summary(model_66)
+```
+- for N.O:AvgBodyMass, t-value is -5.091
+- p-value is 8.42e-07 < 5% --> significant
+
+
+**t-value**
+
+- Width:Height = -4.083
+- Width:N.O = -4.302
+- Width:AvgBodyMass = -4.552
+- Height:N.O = -4.856
+- **Height:AvgBodyMass = -5.197**
+- N.O:AvgBodyMass = -5.091
+
+
+Comparing absolute t-values, Height:AvgBodyMass has the higest. Hence, Height:AvgBodyMass is added to the model.
+
+
+
+
+***
+#### Step 7
+Starting from **lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass))**
+
+Candidates for adding are:
+
+- Width:Height
+- Width:N.O
+- Width:AvgBodyMass
+- Height:N.O
+- N.O:AvgBodyMass
+
+
+```{r}
+model_71 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(Height))
+summary(model_71)
+```
+- for Width:Height, **p-value is 0.959, which is higher than 10%**
+- so, we do not consider Width:Height
+
+
+```{r}
+model_72 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(N.O))
+summary(model_72)
+```
+- for Width:N.O, **p-value is 0.56779, which is higher than 10%**
+- so, we do not consider Width:N.O
+
+
+```{r}
+model_73 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(AvgBodyMass))
+summary(model_73)
+```
+- for Width:AvgBodyMass, t-value is 3.284
+- p-value is 0.00122 < 5% --> significant
+
+
+```{r}
+model_74 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Height):log(N.O))
+summary(model_74)
+```
+- for Height:N.O, **p-value is 0.6009, which is higher than 10%**
+- so, we do not consider Height:N.O
+
+
+```{r}
+model_75 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(N.O):log(AvgBodyMass))
+summary(model_75)
+```
+- for N.O:AvgBodyMass, **p-value is 0.90592, which is higher than 10%**
+- so, we do not consider N.O:AvgBodyMass
+
+
+**t-value**
+
+- **Width:AvgBodyMass = 3.284**
+
+
+Width:AvgBodyMass is only significant and considerable. So, Width:AvgBodyMass is added to the model.
+
+
+
+
+***
+#### Step 8
+Starting from **lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(AvgBodyMass))**
+
+Candidates for adding are:
+
+- Width:Height
+- Width:N.O
+- Height:N.O
+- N.O:AvgBodyMass
+
+
+```{r}
+model_81 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(AvgBodyMass) + log(Width):log(Height))
+summary(model_81)
+```
+- for Width:Height, **p-value is 0.71624, which is higher than 10%**
+- so, we do not consider Width:Height
+
+```{r}
+model_82 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(AvgBodyMass) + log(Width):log(N.O))
+summary(model_82)
+```
+- for Width:N.O, **p-value is 0.95897, which is higher than 10%**
+- so, we do not consider Width:N.O
+
+
+```{r}
+model_83 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(AvgBodyMass) + log(Height):log(N.O))
+summary(model_83)
+```
+- for Height:N.O, **p-value is 0.982216, which is higher than 10%**
+- so, we do not consider Height:N.O
+
+```{r}
+model_84 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(AvgBodyMass) + log(N.O):log(AvgBodyMass))
+summary(model_84)
+```
+- for N.O:AvgBodyMass, **p-value is 0.84109, which is higher than 10%**
+- so, we do not consider N.O:AvgBodyMass
+
+
+Hence, no more variable is significant and considerable. So, from now on, the interaction term between three variables are considered.
+
+
+
+
+***
+#### Step 9
+Starting from **lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(AvgBodyMass))**
+
+Candidates for adding are:
+
+- Width:Height:N.O
+- Width:Height:AvgBodyMass
+- Width:N.O:AvgBodyMass
+- Height:N.O:AvgBodyMass
+
+
+```{r}
+model_91 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(AvgBodyMass) + log(Width):log(Height):log(N.O))
+summary(model_91)
+```
+- for Width:Height:N.O, **p-value is 0.76189, which is higher than 10%**
+- so, we do not consider Width:Height:N.O
+
+
+```{r}
+model_92 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(AvgBodyMass) + log(Width):log(Height):log(AvgBodyMass))
+summary(model_92)
+```
+- for Width:Height:AvgBodyMass, **p-value is 0.444105, which is higher than 10%**
+- so, we do not consider Width:Height:AvgBodyMass
+
+
+```{r}
+model_93 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(AvgBodyMass) + log(Width):log(N.O):log(AvgBodyMass))
+summary(model_93)
+```
+- for Width:N.O:AvgBodyMass, **p-value is 0.459936, which is higher than 10%**
+- so, we do not consider Width:N.O:AvgBodyMass
+
+
+```{r}
+model_94 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(AvgBodyMass) + log(Height):log(N.O):log(AvgBodyMass))
+summary(model_94)
+```
+- for Width:N.O:AvgBodyMass, **p-value is 0.31676, which is higher than 10%**
+- so, we do not consider Height:N.O:AvgBodyMass
+
+
+Hence, no more variable is significant and considerable. So, from now on, the interaction term between four variables are considered.
+
+
+
+
+#### Step 10
+Starting from **lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(AvgBodyMass))**
+
+Candidate for adding is:
+
+- Width:Height:N.O:AvgBodyMass
+
+
+```{r}
+model_101 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(AvgBodyMass) + log(Width):log(Height):log(N.O):log(AvgBodyMass))
+summary(model_101)
+```
+- for Width:Height:N.O:AvgBodyMass, **p-value is 0.338793, which is higher than 10%**
+- so we do not consider Width:Height:N.O:AvgBodyMass
+
+
+
+***
+Hence, no more variable is significant or considerable. No more variable can be added, so the model building is finalized: 
+
+**lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(AvgBodyMass))**
+
+***
+During this analysis, t-value was used as an indicator for forward model building. As the purpose of this model is to provide most accurate prediction of response varialble, 
+multicollinearity among the terms were not initially considered. However, the final model's VIF values were all less than 10, hinting that model accurately predicts the 
+value of response variable with no major collinear effect.
+
+
+
+
+
+
+
+
+
+
+***
+#### (c) Adding variable 'Infraclass'
+
+Final model from regreeesion model building in (b):
+```lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(AvgBodyMass))```
+
+
+Infraclass = categorical variables
+
+- Marsupials
+- Monotremes
+- Placentals
+
+so, create 2 dummy variable by choosing 1 as reference:
+
+- Marsupials = (0, 0)
+- Monotremes = (1, 0)
+- Placentals = (0, 1)
+
+
+```{r}
+m <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(AvgBodyMass) + factor(Infraclass))
+summary(m)
+```
+Dummy variables are having high p-value, which are higher than 5%, except placenta. This may indicate that model predicts more accurately when phylogenetic similarity among 
+placenta is taken into account. However, low p value in other infraclasses indicate that taking phylogenetic similarity is significant in model prediction. The reasons for 
+such can be attributed to variance in sample sizes, for example, there are only 2 species that belong to monotremata in this data set. Overall, infraclass seems not 
+significant. This can be verified from F-test, following:
+
+
+--> **Partial F-test**
+
+Two nested models:
+
+- Complete model(mC)
+  - with Pc = 9 (intercept + 6 variables + 2 dummy)
+- Reduced model(mR)
+  - with Pr = 7 (intercept + 6 variables)
+
+```  
+H0: There is no significant difference between mC and mR
+
+```
+
+```{r}
+mC <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(AvgBodyMass) + factor(Infraclass))
+mR <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(AvgBodyMass))
+anova(mC, mR) # F-test
+```
+- p-value is 0.05188, which is higher than 5%
+- According to the F-test, HO cannot rejected
+  - There are no significant difference between complete model(mC) and reduced model(mR)
+
+However, due to relative low p-value of the test. It can still be assumed that there is a certain assocation between phylogenetic classes and ECV prediction. 
+
+
+Hence, the effect of adding categorical variable Infraclass as a predictor is not significant.
+
+
+
+
+
+***
+#### (d) Check the assumptions
+
+**Summary Residual plots:**
+
+  - Residual vs Fitted: Linearity
+  - Normal Q-Q: Normality
+  - Scale-Location: Homoscedasticity 
+  - Residuals vs leverage: Outliers/ Influential points
+
+```{r warning=FALSE}
+final_model <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(AvgBodyMass))
+
+plot(final_model, 1)
+
+
+plot(final_model, 2)
+
+
+plot(final_model, 3)
+
+
+plot(final_model, 5)
+```
+
+
+***
+Major assumptions of linear regression will be analyzed through analysis of four graphs above. First of all the linearity of the data can be checked by looking at Residual 
+vs fitted graph above. If there is a pattern, either positive or negative correlation, between fitted value and residuals, it means that residual error increase or decrease 
+along with increase or decrease in predicted response variable value of the model. Another way to put it is that variance of our residual is not homogenous throughout the 
+model, meaning residual value increase or decrease to match up the prediction. In the case of homoscedatic model, the variance of residual is homogenous as coefficients of 
+the predictor variable accurately predict response variable value (fitted value). Thus, a horizontal trend line should be observed in ideal case where there is no 
+relationship between residual and response variable and linear relationship between predictor and response variable. In our example, a clear horizontal line is observed. 
+
+Then, normal QQ can be utilized to see if residual is normally distributed. If straight dashed line is observed, meaning that value of residual is distributed normally 
+throughout the model. 
+
+Scale location plot can be used to check homogenous variance assumption. If plot shows no distinct pattern bettern standardized residual and fitted value, which is similar 
+to what is done in the first graph, then it can be assumed that homoscedacity holds true in the model. Our model gave almost straight horizontal line, hinting homoscedacity 
+of the model. 
+
+
+Residual vs leverage graph shows whether there are influential values that affect the model and thus must be removed. In this data, there are no points that lie outside 3 
+standard deviations away and trend line is horizontal, hinting high success rate of prediction with less outliers.
+
+
+
+
+
+
+
+
+
+
+***
+#### (e) Check if there are outliers or influential observations 
+Leverage --> Cook's distance --> DFBETAS --> Final analysis
+
+Our final model is as below:
+```{r}
+final_model <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(AvgBodyMass))
+```
+
+##### (1) Leverage 
+
+= outlier?
+
+- The larger the leverage for ith observation, the closer ith prediction is to ith outcome
+- If leverage for ith observation large, then:
+  - has predictor values that deviate strongly
+  - possibly has large influence --> cook's distance assure this
+- when p is number of unknown parameters and n is number of observations
+  - Average leverage: p/n
+  - Extreme leverage: larger than **2p/n**
+
+Check for extreme leverage value:
+```{r}
+p <- length(coef(final_model)) ;p
+n <- nrow(Data) ;n
+(2*p) / n
+```
+- Extreme leverage when higher than 0.07035176.
+
+
+```{r}
+lev <- hat(model.matrix(final_model))
+plot(lev, type='h')
+```
+
+```{r}
+which(lev > (2*p) / n)
+```
+- 30 observations from the data having extreme leverage values.
+
+
+
+
+***
+##### (2) Influential? Cook's distance
+
+- If Cook's distance(Di) large, then ith observation has large influence on predictions and coefficients
+- Extreme Cook's distance: exceeds 50% percentile of $F_{p,n-p}$-distribution
+
+
+Plot of the Cook's distance for every observation:
+```{r}
+plot(final_model, 4)
+```
+
+
+calculating 50% percentile of the F distribution
+```{r}
+p <- length(coef(final_model))
+n <- nrow(Data)
+
+fquantile <- qf(0.5, df1 = p, df2 = n - p) ;fquantile
+```
+- 50% percentile of the F distribution is 0.9097289
+
+
+Investigate if cook's distance surpasses the 50% percentile of the $F_{p,n-p}$-distribution:
+```{r}
+cookd <- cooks.distance(final_model)
+which(cookd > fquantile)
+```
+- According to Cook's distance, there are no observation that influences model. In other words, although there were 30 observations having high leverage, none of them are 
+- influential.
+
+
+
+
+***
+##### (3) DFBETAS
+- diagnostic measure for influence of ith observation on each regression coefficient separately
+- tells where exactly or what in the model is influenced
+- only calculate for points with high cook's distance 
+- ```DFBETAS = (Bj-Bj(i))/SD```
+
+Bj(i) = Bj - DFBETAS * SD(Bj)
+
+- sign indicates if deleting observation i causes an increase(DFBETAS<0) or decrease(DFBETAS>0) in each coefficient
+- Extreme DFBETAS: **exceeds 1** in small to mediocre datasets, and 2/sqrt(n) in large datasets
+
+```{r}
+2 / sqrt(n)
+```
+Extreme DFBETA when exceeds 0.1417762
+
+However, we do not have any point(observation) that is influential, so there no need to calculate DFBETAS.
+
+
+
+
+***
+##### (4) Final analysis
+There are no outliers or influential observations. It can be verified with the Residual plots.
+
+```{r}
+plot(final_model, 5)
+```
+```{r}
+plot(final_model, 6)
+```
+
+No outlier or influential point is observed from either plots.
+
+Hence, we now conclude that there are no outliers or influential observations.
+
+
+***
+Assumptions can be re-checked by residual plots
+```{r}
+par(mfrow=c(2, 2))
+plot(final_model)
+```
+
+
+
+
+
+
+
+
+
+
+***
+#### (f) OLS vs PGLS
+
+OLS and PGLS have substantial similarity. However, there is one crucial difference between the two is assumption of non-independence of residual in PGLS and independence in 
+OLS. PGLS takes taxonomical similiarities between related species into account for residual variance. OLS does not and it assumes that residual is independent of taxonomical 
+similarities and normally distributed. In analysis of samples of related species, utilizing PGLS will be better than utilizing OLS. 
+
+
+
+
+
+
+
+
+
+
+***
+### 2. Results:
+
+Regarding our final model:
+```{r}
+summary(final_model)
+```
+
+- Variable log(AvgBodyMass) has high p-value of 0.68347. However, as model built hierarchy and we have two related interaction terms both with p-value < 5%, 
+- log(Height):log(AvgBodyMass) and log(Width):log(AvgBodyMass), we still keep the variable log(AvgBodyMass)
+
+- Our model has multiple R-square value of 0.9938, which means about 99.39% of our observation is explained by the model. Multiple R-squared value is used for check if the 
+- prediction is good enough, to avoid overfitting.
+
+
+```{r}
+library(jtools) # load jtools to use function summ
+```
+
+```{r}
+m1 <- lm(log(ECV) ~ log(Width))
+m2 <- lm(log(ECV) ~ log(Width) + log(Height))
+m3 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O))
+m4 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass))
+m5 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass))
+m6 <- lm(log(ECV) ~ log(Width) + log(Height) + log(N.O) + log(AvgBodyMass) + log(Height):log(AvgBodyMass) + log(Width):log(AvgBodyMass))
+
+```
+
+
+**Table1**
+Table containing an overview of the selected regression coefficients in each of the successive models, including t value and t value.
+```{r}
+summ(m1, model.info = FALSE, model.fit = FALSE, digits = 6)
+summ(m2, model.info = FALSE, model.fit = FALSE, digits = 6)
+summ(m3, model.info = FALSE, model.fit = FALSE, digits = 6)
+summ(m4, model.info = FALSE, model.fit = FALSE, digits = 6)
+summ(m5, model.info = FALSE, model.fit = FALSE, digits = 6)
+summ(m6, model.info = FALSE, model.fit = FALSE, digits = 6)
+```
+
+The table gives coefficients of each selected predictor variables along with their respective t value and p value. Our final model had 6 predictor variables and an 
+intercept, none of them had extremely low p value. The equation derived from the model would be:
+
+
+log(ECV) =  1.284933 x log(Xw) + 1.401415 x log(Xh)  + 0.307761 x log(Xn)  + -0.012753 x log(Xavg) + -0.134928 X log(Xh) x log(Xavg) + 0.122155 x log(Xw) x log (Xavg)
+
+***
+To interpret regarding **ECV**, there need **back-transformation**:
+
+ECV =  exp(1.284933 x log(Xw) + 1.401415 x log(Xh)  + 0.307761 x log(Xn)  + -0.012753 x log(Xavg) + -0.134928 X log(Xh) x log(Xavg) + 0.122155 x log(Xw) x log (Xavg))
+
+***
+Standard error decreases over each successive addition/deletion of predictor variable, hinting higher accuracy in each addition/deletion.
+
+***
+```{r message=FALSE, warning=FALSE}
+export_summs(m1, m2, m3, m4, m5, m6, digits = 4)
+```
+
+
+
+
+**Table 2**
+```{r}
+Model <- 
+c('Width',
+'Width + Height',
+'Width + Height + N.O',
+'Width + Height + N.O + AvgBodyMass',
+'Width + Height + N.O + AvgBodyMass + Height:AvgBodyMass',
+'Width + Height + N.O + AvgBodyMass + Height:AvgBodyMass + Width:AvgBodyMass')
+
+R.square <- c(0.9840, 0.9915, 0.9924, 0.9925, 0.9934, 0.9938)
+RSE <- c(0.2617, 0.1908, 0.1816, 0.1801, 0.1691, 0.165)
+
+
+Table2 <- data.frame(Model, R.square, RSE)
+Table2
+```
+
+The table 2 shows R squared value and RSE value of each successive models. Each successive addition/deletion of predictor variable led to overall increase in R squared value 
+and decrease in RSE. Both hinting that model is becoming more and more successful in accurate prediction.
+
+```{r}
+plot(y = predict(final_model), x = log(ECV))
+```
+
+The figure shows linear relation between the predicted and measued ECV values. 
+
+
+
+
+***
+Overall analysis of the results show that model successfully predicts ECV based on 4 predictor variables and 2 interaction terms. Decrease in residual error and increase in 
+R sqaured andproves that forward selection improved model's accuracy in prediction. It has showed that there prediction of the model is independent of the influence from 
+categorical variable based on taxonomy, indicating that model successfullly predicts ECV of species without taking taxonomical similaritites into account. This indicates 
+that utilizing OLS as done in this model instead of PGLS is actually better for the model as categorical variable holds no statistical significance in model prediction. This 
+speculation may change if sample size increases for other infraclass as it was revealed that taking placenta infraclass as categorical variable revealed to be significant. 
+Thus, to make sensible judgement regarding whether infraclass should be considered as categorical variable, sample size must increase. 
+
+***
+
+

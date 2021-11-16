@@ -1,0 +1,370 @@
+---
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+***
+### I. Parameter estimation
+#### I.1. Reading the data
+
+```{r}
+chlorsulfuron <- read.table('chlorsulfuron.txt', sep='', header = TRUE)
+attach(chlorsulfuron)
+```
+
+
+***
+#### I.2.1. Writing the objective functions for the different dose response models
+
+- Four-parameter log-logistic model
+- Brain-Cousens hormesis model
+- Cedergreen-Ritz-Streibig modified log-logistic model
+
+
+```{r}
+# Four-parameter log-logistic function
+Fparfun <- function(xdata, thetas) {
+  e <- thetas[1] + (thetas[2] - thetas[1]) / (1 + exp(thetas[3] * (log(xdata) - log(thetas[4]))))
+  return(e)
+}
+
+
+# Brain-Cousens hormesis function
+Brainfun <- function(xdata, thetas) {
+  e <- thetas[1] + (thetas[2] - thetas[1] + thetas[5] * xdata) / (1 + exp(thetas[3] * (log(xdata) - log(thetas[4]))))
+  return(e)
+}
+
+
+# Cedergreen-Ritz-Streibig modified log-logistic function
+Cederfun <- function(xdata, thetas) {
+  e <- thetas[1] + (thetas[2] - thetas[1] + thetas[5] * exp(-1/(xdata**thetas[6]))) / (1 + exp(thetas[3] * (log(xdata) - log(thetas[4]))))
+  return(e)
+}
+```
+
+
+***
+#### I.2.2. Writhing the objective function J
+Use residual sum of squares as objective function
+```{r}
+# objective function
+Jtheta <- function(thetas, FUN, xdata, ydata) {
+  ydatahat <- do.call(FUN, list(xdata, thetas))
+  yresid <- ydata - ydatahat
+  J <- sum(yresid^2)
+  return(J)
+}
+```
+
+
+***
+#### I.3. Minimizing the objective function
+#### I.3.1 Finding initial values
+
+- C: The horizontal asymptote on the right side (for very large values values of x).
+- D: The horizontal asymptote on the left side (for very small values of x).
+- b: The steepness - absolute value of slope for a fitted line - of the dose-response curve.
+- e: The dose to reach 50% of the maximal eﬀect. **Use initial parameter value e = 1.**
+- F: The size of the ‘hormesis’ eﬀect. This is a positive respone at low doses of a toxin or stressor. The larger the value is, the larger the hormesis eﬀect. F = 0 corresponds to no hormesis eﬀect and the resulting model is the four-parameter log-logistic model. **Use initial parameter value F = 1**.
+- α: a freely varying parameter. **Use initial parameter value α = 1**.
+
+
+```{r}
+# finding initial b value
+m <- lm(log(area) ~ dose)
+plot(dose, log(area))
+abline(m)
+```
+```{r}
+summary(m)
+```
+**b** = abs(-0.68547) = **0.6855**
+
+In order to identify initial value of b, fitted line of the dose response curve was drawn and its corresponding slope was labeled. R squared value of the linear function used 
+to draw the fitted line is poor mainly due to the non-linearity of the data. 
+
+
+***
+#### I.3.2 Setting initial values
+```{r warning=FALSE}
+pFpar <- c(min(log(area)), max(log(area)), 0.6855, 1) #(C D, b, e)
+pBrain <- c(min(log(area)), max(log(area)), 0.6855, 1, 1) #(C D, b, e, F)
+pCeder <- c(min(log(area)),  max(log(area)), 0.6855, 1, 1, 1) #(C D, b, e, F, α)
+```
+
+Initial values of the parameter was chosen under following rationale. Minimum of log transformed area value was chosen as initial value of the parameter C, because all models 
+converge to log(y) = C at very large value of x or dose. Also, it has been mentioned that C is asymptotic value at very small value of x, so smallest log transformed y value 
+was chosen as the value of C. On the other hand, maximum log transformed y value was chosen as initial value of D, because D is the asymptotic value when x is very large. The 
+initial values for e, F and α were already set and value of b was taken from fitted line slope. 
+
+
+***
+#### I.3.3 Minimizing the objective function using 'Nelder-Mead algorithm'
+For funtion 'optim', **convergence = 0** indicates successful completion.
+```{r warning=FALSE}
+Fparfit <- optim(par = pFpar, fn = Jtheta, FUN = Fparfun, xdata = dose, ydata = log(area)) # convergence = 0
+Fparfit 
+```
+
+```{r warning=FALSE}
+Brainfit <- optim(par = pBrain, fn = Jtheta, FUN = Brainfun, xdata = dose, ydata = log(area), control = list(maxit=1000)) # convergence = 0
+Brainfit
+```
+
+```{r warning=FALSE}
+Cederfit <- optim(par = pCeder, fn = Jtheta, FUN = Cederfun, xdata = dose, ydata = log(area), control = list(maxit=1000)) # convergence = 0
+Cederfit
+```
+
+For all models, we have $convergence of zero, representing that all iterations were completed successfully. 
+
+
+
+
+***
+### II. Plot the data and fitted curves
+
+Plot the callus area in function of the dose along with the fitted curves
+```{r}
+plot(x = dose, y = log(area),
+     ylim = c(0, 8), xlim = c(0, 10),
+     ylab = "area (mm**2)", xlab = "dose (nmol/L)",
+     pch = 19)
+xseq <- seq(min(dose), max(dose), 0.1)
+lines(x = xseq, y = Fparfun(xseq, Fparfit$par), lty = "dashed", col = 'green')
+lines(x = xseq, y = Brainfun(xseq, Brainfit$par), lty = "solid", col = 'orange' )
+lines(x = xseq, y = Cederfun(xseq, Cederfit$par), lty = "dotdash", col = 'blue')
+legend(x = "topright", 
+       legend = c("Four-parameter log-logistic function", "Brain-Cousens hormesis function", 
+                  "Cedergreen-Ritz-Streibig modified log-logistic function"), 
+       lty = c("dashed", "solid", "dotdash"), 
+       col = c('green', 'orange', 'blue'))
+```
+
+
+
+
+***
+### III. Select the best model
+Select the best model based on both the Bayesian Information Criterion (BIC) and F-tests. (Significance level of 5%)
+
+#### III.1.1 Functions to calculate Bayesian Information Criterion (BIC)
+
+```{r}
+# Bayesian Information Criterion (BIC)
+BIC <- function(thetas, FUN, xdata, ydata) {
+  RSS <- Jtheta (thetas, FUN, xdata, ydata)
+  N <- length(xdata)
+  p <- length(thetas)
+  B <- N * log(RSS / N) + p * log(N)
+  return(B)
+}
+```
+
+
+***
+#### III.1.2 Function to perform a F-test, statistical hypothesis testing
+
+```{r}
+# F-test
+Ftest <- function(thetas1, thetas2, FUN1, FUN2, xdata, ydata) {
+  
+  RSS1 <- Jtheta(thetas1, FUN1, xdata, ydata)
+  RSS2 <- Jtheta(thetas2, FUN2, xdata, ydata)
+  
+  N <- length(xdata)
+  p1 <- length(thetas1)
+  p2 <- length(thetas2)
+  F <- ((RSS1 - RSS2) / (p2 - p1)) / (RSS2 / (N - p2))
+  
+  pvalue <- pf(F, df1 = p2 - p1, df2 = N - p2, lower.tail = FALSE)
+  return(list(F = F, df1 = abs(p2 - p1), df2 = N - p2, pValue = pvalue))
+}
+```
+
+
+***
+#### III.2 Selection of the model
+#### III.2.1 Check BIC values
+Select model with lowest value of criterion
+```{r}
+BIC(Fparfit$par, Fparfun, dose, log(area)) # the lowest
+BIC(Brainfit$par, Brainfun, dose, log(area))
+BIC(Cederfit$par, Cederfun, dose, log(area))
+```
+
+Four-parameter log-logistic model has the lowest BIC value among three. This results represent that among the optimized model generated from set models, four parameter log-
+logistic model gave best goodness of fit to given data. The equation that generates BIC value  is designed to give lower (more negative) value to model that gives best fit. 
+Now we verify this with the F-test.
+
+
+***
+#### III.2.2 Perform F-tests
+Peform F-tests at a significance level of 5%
+```
+H0: No significant difference between simple and complex model
+HA: Complex model is significantly better than the simple model
+```
+```{r}
+Ftest(Fparfit$par, Brainfit$par, Fparfun, Brainfun, dose, log(area))
+qf(0.95,1,38)
+```
+For F-test between:
+
+ - Four-parameter log-logistic model (simple model)
+ - Brain-Cousens hormesis model (complex model)
+
+p-value > 5%, null hypothesis cannot be rejected. As shown, F-statistics value from the test was less than critical value (0.6537327 < 4.098172). There is no significant 
+difference between simple and complex model. Complex model is not better than simple model.
+
+
+
+```{r}
+Ftest(Fparfit$par, Cederfit$par, Fparfun, Cederfun, dose, log(area))
+qf(0.95,2,37)
+```
+
+For F-test between:
+
+ - Four-parameter log-logistic model (simple model)
+ - Cedergreen-Ritz-Streibig modified log-logistic model (complex model)
+
+p-value > 5%, null hypothesis cannot be rejected. As shown, F-statistics value from the test was less than critical value (0.062818 < 3.251924). There is no significant difference between simple and complex model. Complex model is not better than simple model.
+
+
+***
+**Conclusion on selection:**
+
+Based on both BIC and F-tests, **Four-parameter log-logistic model** is selected as the best model. Four-parameter log-logistic model has the lowest BIC value and no complex 
+model is gives signficantly better fit than this model.
+
+
+
+
+***
+### IV. Perform a local sensitivity analysis
+Selected model: Four-parameter log-logistic model
+
+```{r}
+# define function to calculate sensitivity
+sensitivity <- function(FUN, thetas, xdata, eps = 1e-5) {
+  yhat <- do.call(FUN, list(xdata, thetas))
+  S <- matrix(NA, nrow = length(xdata), ncol = length(thetas))
+  for (p in 1:length(thetas)) {
+    thetas. <- thetas
+    thetas.[p] <- thetas[p] * (1+eps)
+    yhat. <- do.call(FUN, list(xdata, thetas.))
+    S[, p] <- (yhat. - yhat) / (eps*thetas[p])
+  }
+  
+  return(S)
+}
+
+
+# define function to plot sensitivity
+plotSens <- function(sens, parNames = c("C", "D", "b", "e")) {
+  require(ggplot2)
+  require(reshape2)
+  
+  Sens <- as.data.frame(sens)
+  colnames(Sens) <- parNames
+  Sens.m <- melt(data.frame(x = seq(from=0, to=10, by=0.1), Sens), id.vars = "x")
+  
+  gg <- ggplot(Sens.m, aes(x = x, y = value)) +
+    geom_line() + ylab(expression(paste("Sensitivity ",bgroup("(",over(delta~y[j],delta~theta[i]),")")))) + xlab("Dose") +
+    facet_grid(variable ~ ., scales = 'free', labeller = label_parsed)+
+    theme_bw()+theme(strip.background = element_rect(fill = "white"), strip.text.y = element_text(angle = 0))
+  
+  return(gg)
+}
+```
+
+```{r}
+sensFpar <- sensitivity(FUN = Fparfun, thetas = Fparfit$par, xdata = seq(from=0, to=10, by=0.1), eps = 1e-5)
+
+plotSens(sens = sensFpar, parNames = c("C", "D", "b", "e"))
+```
+
+***
+Based on sensitivity plot, each parameter's senstitivy will be first analyzed. Sensitivity of parameter C starts from zero and converges towards 1 as x approaches large 
+value. Sensitivity of 1 represents that deviation in parameter value is has direct impact on outcome variable (area) with slope of 1. This represents that initially, change 
+in C has no impact on area but its impact on y slowly increases until it plateaus to 1. This result can be explained analytically also, as when x approaches zero, the 
+function transforms into y = C + (D - C) / 1 which is the same as y = D. Notice that C disappears from the equation, thus it makes sense that its sensitivity is zero when 
+value of x is really small. On the other hand, when x approaches very large value (assumed to be infinite for simplicity sake), the equation transforms into y = C + (D -c) / 
+∞, which is y = C. This explains the sort of linear relationship between the value of y and C when x approaches large value. 
+
+For D, it is the exact opposite. Initially, change in value of D has unit impact (1) on value of area, but its impact decreases down to 0, meaning it has no impact, when 
+value of x increases. As explained previously, when value of x is really small, the equation transforms into y = D. This explains sensitivity of 1 near x = 0. When value of x 
+increases, the equation transforms into y = D, thus also explaining why sensitivity of **zero** is achieved at large values of x. 
+
+For b, we observe three patterns. From x = 0 to x = 0.3, sensitivity increases from 0 to 0.75. The reason why it starts from zero is due to the function transforming into y = 
+D at very small value of x. Then sensitivity decreases to negative value when x goes from 0.3 to 2. Negative sensitivity represents inverse relationship between deviation in 
+parameter value and outcome variable value. Finally from x = 2 onwards, sensitivity approaches zero. The reason why it approaches zero at very large value of x is due to 
+transformation of equation into y = C. 
+
+For e, there were two changes in slope. From x = 0 to x = 1, it's sensitivity increases to over 3. Then it converges to zero. The reason why it starts from zero and end up 
+converging to zero was explained above. 
+
+Sensitivity analysis is aimed to identify range of input value where sensitivity is significantly large. Identifying those regions and taking measurements in those regions 
+may be necessary to generate better parameter values. In this case, sensitivity of most parameters ranged from -1 to 1, but e spikes up to 3 at x value of around 1. Taking 
+more measurements from x = 0.75 to 1.25 may be deemed necessary. 
+
+
+
+
+***
+### V. Calculate 95% CI for the parameter estimation of selected model
+```{r}
+# Define a function to get Fisher Information Matrix (FIM)
+FisherInformation <- function(thetas, FUN, xdata, eps = 1e-5) {
+  sens <- sensitivity(FUN, thetas, xdata, eps)
+  FIM <- t(sens)%*%sens
+  return(FIM)
+}
+
+
+# Define a function to get confidence interval (CI)
+confInterval <- function(thetas, FUN, xdata, alpha = 0.05, eps = 1e-5) {
+  FIM <- FisherInformation(thetas, FUN, xdata, eps)
+  C <- solve(FIM) 
+  StDev <- sqrt(diag(C))
+  N <- length(xdata)
+  p <- length(thetas)
+  t.05 <- qt(p = 1-alpha/2, df = N-p)
+  CI <- data.frame(lower.CI = thetas - StDev*t.05, upper.CI = thetas + StDev*t.05)
+  return(CI)
+}
+```
+
+```{r}
+confInterval(thetas = Fparfit$par, FUN = Fparfun, xdata = dose)
+```
+
+
+For each of parameter, a confidence interval can be derived.
+
+The purpose of confidence intervals is to give us a range of values for our estimated population parameter rather than a single value or a point estimate.
+
+Accoding to the result, We are 95% confident that the true value of the parameters are in our confidence interval;
+
+- 95% confident that the true value of **C** is in CI = [-0.1407856, 1.751977]
+- 95% confident that the true value of **D** is in CI = [6.9369061,	7.818471]
+- 95% confident that the true value of **e** is in CI = [0.7258561,	2.898664]
+- 95% confident that the true value of **f** is in CI = [0.5610417,	1.178931]
+
+
+***
+**conclusion:**
+
+95 % CI of parameter values were calculated and their lower and upper bounds are shown. The precision of the estimates were determined by obtaining covariance matrix from the 
+inverse Fisher Information Matrix and obtaining the standard deviation off of it. The analysis of the results lead to a conclusion that parameters C and e were within the 
+confidence interval(CI) or were not significantly different from the parameter value generated by Four parameter log-logistic function while vice versa for D and b.
+
+***
+
+
