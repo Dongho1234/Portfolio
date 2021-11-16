@@ -60,6 +60,11 @@ if __name__ == '__main__':
     import doctest
     doctest.testmod()
 
-
+'''
+>>> lcs('data01.fna', 'output01.fna')
+>>> print(open('output01.fna').read().rstrip())
+>seq01
+AACTTG
+'''
 print(lcs('data21.fna', 'output21.fna'))
 print(open('output21.fna').read().rstrip())
