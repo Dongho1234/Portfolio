@@ -1,0 +1,32 @@
+'''
+Write a function hamming_distance that takes two DNA strings s and t. 
+The function must return an integer value representing the Hamming distance between s and t
+'''
+
+from Bio import SeqIO
+def hamming_distance(str1, str2):
+    if not isinstance(str1, str):
+        dna = str(str1.seq)
+    if not isinstance(str2, str):
+        dna = str(str2.seq)
+    ctr = 0
+    for i in range(0, len(str1)):
+        if str1[i] != str2[i]:
+            ctr += 1
+    return ctr
+
+
+'''
+>>> hamming_distance('GGGCCGTTGGT', 'GGACCGTTGAC')
+3
+>>> hamming_distance('AAAA', 'TTTT')
+4
+>>> hamming_distance('ACGTACGT', 'TACGTACG')
+8
+>>> hamming_distance('ACGTACGT', 'CCCCCCCC')
+6
+
+>>> from Bio import SeqIO
+>>> hamming_distance(*SeqIO.parse('data08.fna', 'fasta'))
+859
+'''
