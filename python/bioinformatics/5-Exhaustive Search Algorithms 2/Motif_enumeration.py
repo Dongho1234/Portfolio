@@ -57,3 +57,21 @@ def motif_enumeration(sequence, k, d):
         if not False in my_list:
             motif.append(comb)
     return set(motif)
+'''
+motif_enumeration('data01.fna', 3, 1)
+return
+{'ATA', 'ATT', 'TTT', 'GTT'}
+'data01.fna'=
+    >seq01
+    ATTTGGC
+    >seq02
+    TGCCTTA
+    >seq03
+    CGGTATC
+    >seq04
+    GAAAATT
+
+
+
+motif_enumeration('data08.fna', 5, 2)
+'''
