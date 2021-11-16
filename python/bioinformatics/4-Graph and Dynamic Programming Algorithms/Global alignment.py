@@ -129,5 +129,5 @@ if __name__ == '__main__':
     import doctest
     doctest.testmod()
 
-print(global_alignment_score('data01.faa'))
-print(global_alignment('data01.faa'))
+print(global_alignment_score('data07.faa'))
+print(global_alignment('data07.faa'))
