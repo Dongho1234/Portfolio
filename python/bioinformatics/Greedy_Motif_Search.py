@@ -1,11 +1,9 @@
 '''
-Greedy motif search 알고리즘을 이용한
-DNA_FASTA 파일 해독
 
 
 Write a function greedy_motif_search that takes an integer k and the location of a FASTA file containing a collection of DNA strings C DNA.
  The function must return a tuple containing the k-mers resulting from a greedy motif search in C DNA.
- If at any step the function finds more than one k-most probable k-mers in a given DNA string,
+ If at any step the function finds more than one p-most probable k-mers in a given DNA string,
  it must use the one occurring first (the leftmost one).
 '''
 
@@ -112,3 +110,17 @@ def Pr(Text, Profile):
     return p
 
 print(greedy_motif_search(5, 'data21.fna'))
+
+
+'''
+>>> greedy_motif_search(3, 'data01.fna')
+('CAG', 'CAG', 'CAA', 'CAA', 'CAA')
+>>> greedy_motif_search(3, 'data02.fna')
+('GCC', 'GCC', 'AAC', 'TTC')
+>>> greedy_motif_search(5, 'data03.fna')
+('GAGGC', 'TCATC', 'TCGGC', 'GAGTC', 'GCAGC', 'GCGGC', 'GCGGC', 'GCATC')
+>>> greedy_motif_search(6, 'data04.fna')
+('GTGCGT', 'GTGCGT', 'GCGCCA', 'GTGCCA', 'GCGCCA')
+>>> greedy_motif_search(5, 'data05.fna')
+('GCAGC', 'TCATT', 'GGAGT', 'TCATC', 'GCATC', 'GCATC', 'GGTAT', 'GCAAC'
+'''
