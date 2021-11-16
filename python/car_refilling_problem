@@ -1,0 +1,14 @@
+def findStops(mile, gas_station):
+    stops = []
+    ctr = 0
+    for index in range(0, len(gas_station)):
+        if gas_station[index] - gas_station[ctr] > mile:
+            stops.append(gas_station[index-1])
+            ctr = index -1
+    return (len(stops), stops)
+    
+    
+    '''
+    >>> findStops(300, [0, 100, 200, 250, 330, 430, 500, 550, 600, 750, 900])
+(3, [250, 550, 750])
+'''
