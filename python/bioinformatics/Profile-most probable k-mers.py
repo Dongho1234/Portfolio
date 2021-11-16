@@ -56,3 +56,11 @@ def profilemost_probable_kmer(sequence, prof):
 
     a = my_list.index(max(my_list))
     return seq1[a]
+
+
+
+'''
+profilemost_probable_kmer('data05.fna', 'data05.prof')
+return
+'GTTAAT'
+'''
