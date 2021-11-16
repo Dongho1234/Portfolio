@@ -109,7 +109,7 @@ def Pr(Text, Profile):
         p = p * Profile[Text[i]][i]
     return p
 
-print(greedy_motif_search(5, 'data21.fna'))
+print(greedy_motif_search(5, 'data20.fna'))
 
 
 '''
