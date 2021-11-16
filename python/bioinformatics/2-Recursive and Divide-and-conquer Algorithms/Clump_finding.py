@@ -35,6 +35,6 @@ def clump_finding(dna, k, L, t):
 {'G', 'T', 'C', 'A'}
 
 >>> from Bio import SeqIO
->>> clump_finding(*SeqIO.parse('data.fna', 'fasta'), 11, 566, 18)
+>>> clump_finding(*SeqIO.parse('data10.fna', 'fasta'), 11, 566, 18)
 {'AAACCAGGTGG'}
 '''
