@@ -65,4 +65,8 @@ def eulerian_cycle(f1):
                         return tuple(back[::-1])
                 else:
                     break
+'''
+>>> eulerian_cycle('data01.txt')
+(0, 3, 2, 6, 8, 7, 9, 6, 5, 4, 2, 1, 0)
+'''
 
