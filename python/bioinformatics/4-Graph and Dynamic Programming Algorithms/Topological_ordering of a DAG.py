@@ -37,8 +37,8 @@ def topological_ordering(data):
     my_list = [int(i) for i in my_list]
     return tuple(my_list)
 '''
->>> topological_ordering('data01.txt')
-(1, 4, 5, 2, 3)
+>>> topological_ordering('data02.txt')
+(12, 13, 16, 17, 18, 20, 24, 25, 9, 1, 26, 4, 5, 8, 11, 0, 21, 10, 23, 22, 14, 3, 2, 15, 7, 6, 19)
 
 >>> topological_ordering('data03.txt')
 (1, 11, 28, 3, 41, 47, 50, 53, 59, 61, 62, 68, 70, 71, 48, 69, 16, 35, 66, 0, 29, 12, 25, 
