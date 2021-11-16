@@ -1,7 +1,7 @@
 '''
-function approximate_matches that takes two DNA strings  and  and an integer .
-The function must return a tuple containing all starting positions where pattern 
-appears as a substring of  with at most  mismatches.
+function approximate_matches that takes two DNA strings p and s and an integer d.
+The function must return a tuple containing all starting positions where pattern p 
+appears as a substring of s with at most d mismatches.
 '''
 from Bio import SeqIO
 
