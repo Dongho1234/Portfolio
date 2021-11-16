@@ -25,6 +25,6 @@ def approximate_matches(pattern, dna, mismatch):
 (6, 7, 26, 27, 78)
 
 >>> from Bio import SeqIO
->>> approximate_matches(*SeqIO.parse('data.fna', 'fasta'), 3)
+>>> approximate_matches(*SeqIO.parse('data11.fna', 'fasta'), 3)
 (217, 1145, 2135, 5981, 12433, 13010, 1615
 '''
